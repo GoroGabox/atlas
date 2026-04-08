@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem D:/StartUp/atlas/src/components/feature/)",
+      "Bash(Select-Object Name)",
+      "Bash(node atlas-pitch.js)",
+      "Bash(grep -E \"\\\\.\\(pptx|docx|doc\\)$\")",
+      "Bash(node atlas-proposal.js)",
+      "Bash(npm install:*)",
+      "Bash(python \"C:/Users/Gabriel/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/e09d7d90-b562-472b-bf11-45dd84745afd/dcbe4464-489e-4df9-bccd-b080e91f9aec/skills/docx/scripts/office/validate.py\" \"D:/StartUp/atlas/atlas-proposal.docx\")",
+      "Bash(pip install:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

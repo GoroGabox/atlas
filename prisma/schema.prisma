@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Module {
+  id                  String          @id @default(cuid())
+  name                String
+  description         String
+  domain              String
+  criticality         String          @default("medium")
+  pmOwner             String?
+  techOwner           String?
+  riskLevel           String          @default("medium")
+  documentationStatus String          @default("none")
+  features            Feature[]
+  screens             Screen[]
+  services            Service[]
+  history             ModuleHistory[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model ModuleHistory {
+  id        String   @id @default(cuid())
+  moduleId  String
+  snapshot  String   // JSON con todos los campos del módulo en ese momento
+  note      String?  // descripción opcional del cambio
+  createdAt DateTime @default(now())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model Feature {
+  id                  String   @id @default(cuid())
+  moduleId            String
+  name                String
+  description         String
+  businessGoal        String
+  actors              String
+  screens             String
+  components          String
+  services            String
+  endpoints           String
+  entities            String
+  businessRules       String
+  dependencies        String
+  technicalComplexity String   @default("medium")
+  businessComplexity  String   @default("medium")
+  riskLevel           String   @default("medium")
+  busFactor           Int      @default(1)
+  pmOwner             String?
+  techOwner           String?
+  techDebt            String
+  documentationStatus String   @default("none")
+  module              Module   @relation(fields: [moduleId], references: [id])
+  flows               Flow[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Screen {
+  id         String   @id @default(cuid())
+  moduleId   String
+  name       String
+  route      String?
+  purpose    String
+  components String
+  module     Module   @relation(fields: [moduleId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Component {
+  id       String @id @default(cuid())
+  name     String
+  type     String
+  purpose  String
+  services String
+}
+
+model Service {
+  id        String  @id @default(cuid())
+  name      String
+  purpose   String
+  endpoints String
+  moduleId  String?
+  module    Module? @relation(fields: [moduleId], references: [id])
+}
+
+model Endpoint {
+  id               String @id @default(cuid())
+  path             String
+  method           String
+  purpose          String
+  requestEntities  String
+  responseEntities String
+}
+
+model Flow {
+  id        String     @id @default(cuid())
+  featureId String
+  feature   Feature    @relation(fields: [featureId], references: [id])
+  steps     FlowStep[]
+  createdAt DateTime   @default(now())
+  graphJson String?
+}
+
+model FlowStep {
+  id                 String  @id @default(cuid())
+  flowId             String
+  order              Int
+  actor              String?
+  screen             String?
+  action             String
+  components         String? // JSON array — componentes UI que inician el request
+  services           String? // JSON array — nombres de servicios ["ReportService", "AuthService"]
+  endpoints          String? // JSON array — [{method, path, payload?, response?}]
+  responseComponents String? // JSON array — componentes UI que muestran la response
+  flow               Flow    @relation(fields: [flowId], references: [id])
+}
+
+model Relation {
+  id           String  @id @default(cuid())
+  fromType     String
+  fromId       String
+  relationType String
+  toType       String
+  toId         String
+  metadata     String?
+}
