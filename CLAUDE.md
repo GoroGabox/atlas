@@ -34,7 +34,7 @@ npx tsx prisma/seed.ts   # Sembrar datos de prueba
 ```
 src/
 ├── app/
-│   ├── page.tsx                  # Dashboard con health scores
+│   ├── page.tsx                  # Dashboard con awareness scores
 │   ├── layout.tsx                # Layout raíz + navegación (#main-nav)
 │   ├── api/
 │   │   ├── search/route.ts       # Búsqueda global (módulos, features, screens…)
@@ -76,7 +76,7 @@ src/
 │   └── ui/                       # Primitivos: Modal, FormField, SubmitButton, DeleteButton
 ├── lib/
 │   ├── prisma.ts                 # Singleton del cliente Prisma
-│   ├── healthScore.ts            # Algoritmo de health score (0-100)
+│   ├── healthScore.ts            # Algoritmo de awareness score (0-100)
 │   ├── flowDomain.ts             # Validación y estilos de flujos (legacy)
 │   └── actions/
 │       ├── flows.ts              # Server Actions: flow, flowStep, saveFlowGraph
@@ -103,7 +103,7 @@ src/
 - **Endpoint** — endpoint de API (`path`, `method`, `requestEntities`, `responseEntities`).
 - **Relation** — relación genérica entre cualquier entidad (`fromType`, `fromId`, `relationType`, `toType`, `toId`).
 
-## Health Score (0-100)
+## Awareness Score (0-100)
 
 El algoritmo en `src/lib/healthScore.ts` calcula:
 

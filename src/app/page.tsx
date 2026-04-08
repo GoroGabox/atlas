@@ -119,11 +119,11 @@ export default async function DashboardPage() {
         </div>
       </div>      
 
-      {/* Health score global */}
+      {/* Awareness score global */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-white">Health score</h2>
+            <h2 className="text-sm font-semibold text-white">Awareness score</h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Score global: <span className={`font-bold ${
                 stats.globalScore >= 85 ? "text-green-400" :

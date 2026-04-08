@@ -15,30 +15,42 @@
  * El script genera un reporte detallado de coincidencias y pérdidas.
  */
 
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const DRY_RUN = !process.argv.includes("--apply");
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type ScreenRow = Prisma.ScreenGetPayload<{
-  select: { id: true; name: true };
-}>;
+type ScreenRow = {
+  id: string;
+  name: string;
+};
 
-type ComponentRow = Prisma.ComponentGetPayload<{
-  select: { id: true; name: true };
-}>;
+type ComponentRow = {
+  id: string;
+  name: string;
+};
 
-type ServiceRow = Prisma.ServiceGetPayload<{
-  select: { id: true; name: true };
-}>;
+type ServiceRow = {
+  id: string;
+  name: string;
+};
 
-type EndpointRow = Prisma.EndpointGetPayload<{
-  select: { id: true; method: true; path: true };
-}>;
+type EndpointRow = {
+  id: string;
+  method: string;
+  path: string;
+};
 
-type FlowStepRow = Prisma.FlowStepGetPayload<Record<string, never>>;
+type FlowStepRow = {
+  id: string;
+  screen: string | null;
+  components: string | null;
+  responseComponents: string | null;
+  services: string | null;
+  endpoints: string | null;
+};
 
 type FlowStepUpdateData = {
   screen?: string | null;
@@ -72,14 +84,13 @@ function normalize(s: string): string {
   return s.trim().toLowerCase();
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
   console.log(`\n${"=".repeat(60)}`);
   console.log(DRY_RUN ? "DRY-RUN: no se escriben cambios en la DB" : "APPLY: escribiendo cambios en la DB");
   console.log(`${"=".repeat(60)}\n`);
 
-  // Cargar catálogos completos
   const [screens, components, services, endpoints, steps]: [
     ScreenRow[],
     ComponentRow[],
@@ -91,32 +102,34 @@ async function main(): Promise<void> {
     prisma.component.findMany({ select: { id: true, name: true } }),
     prisma.service.findMany({ select: { id: true, name: true } }),
     prisma.endpoint.findMany({ select: { id: true, method: true, path: true } }),
-    prisma.flowStep.findMany(),
+    prisma.flowStep.findMany({
+      select: {
+        id: true,
+        screen: true,
+        components: true,
+        responseComponents: true,
+        services: true,
+        endpoints: true,
+      },
+    }),
   ]);
 
-  console.log(
-    `Catálogo — Screens: ${screens.length} | Components: ${components.length} | Services: ${services.length} | Endpoints: ${endpoints.length}`
-  );
+  console.log(`Catálogo — Screens: ${screens.length} | Components: ${components.length} | Services: ${services.length} | Endpoints: ${endpoints.length}`);
   console.log(`FlowSteps a procesar: ${steps.length}\n`);
 
-  // Índices para lookup rápido
   const screenByName = new Map<string, string>(
     screens.map((s: ScreenRow) => [normalize(s.name), s.id])
   );
-
   const compByName = new Map<string, string>(
     components.map((c: ComponentRow) => [normalize(c.name), c.id])
   );
-
   const serviceByName = new Map<string, string>(
     services.map((s: ServiceRow) => [normalize(s.name), s.id])
   );
-
   const endpointByKey = new Map<string, string>(
     endpoints.map((e: EndpointRow) => [`${e.method.toUpperCase()}:${normalize(e.path)}`, e.id])
   );
 
-  // Contadores del reporte
   const report = {
     screensResolved: 0,
     screensLost: 0,
@@ -134,7 +147,6 @@ async function main(): Promise<void> {
     const update: FlowStepUpdateData = {};
     let changed = false;
 
-    // ── screen ────────────────────────────────────────────────────────────
     if (step.screen) {
       const resolvedId = screenByName.get(normalize(step.screen));
       if (resolvedId) {
@@ -148,7 +160,6 @@ async function main(): Promise<void> {
       changed = true;
     }
 
-    // ── components ────────────────────────────────────────────────────────
     const compNames = parseArr(step.components);
     if (compNames.length > 0) {
       const resolvedIds: string[] = [];
@@ -166,7 +177,6 @@ async function main(): Promise<void> {
       changed = true;
     }
 
-    // ── responseComponents ────────────────────────────────────────────────
     const respCompNames = parseArr(step.responseComponents);
     if (respCompNames.length > 0) {
       const resolvedIds: string[] = [];
@@ -184,7 +194,6 @@ async function main(): Promise<void> {
       changed = true;
     }
 
-    // ── services ──────────────────────────────────────────────────────────
     const svcNames = parseArr(step.services);
     if (svcNames.length > 0) {
       const resolvedIds: string[] = [];
@@ -202,7 +211,6 @@ async function main(): Promise<void> {
       changed = true;
     }
 
-    // ── endpoints ─────────────────────────────────────────────────────────
     const epObjs = parseEndpoints(step.endpoints);
     if (epObjs.length > 0) {
       const resolvedIds: string[] = [];
@@ -210,7 +218,6 @@ async function main(): Promise<void> {
         if (!ep.method || !ep.path) continue;
         const key = `${ep.method.toUpperCase()}:${normalize(ep.path)}`;
         const id = endpointByKey.get(key);
-
         if (id) {
           resolvedIds.push(id);
           report.epsResolved++;
@@ -234,17 +241,15 @@ async function main(): Promise<void> {
     }
   }
 
-  // ── Reporte ─────────────────────────────────────────────────────────────
   console.log("─── RESULTADO ───────────────────────────────────────────");
   console.log(`Steps procesados con cambios: ${report.stepsModified}/${steps.length}`);
-  console.log(`\nScreens    → resueltas: ${report.screensResolved} | perdidas: ${report.screensLost}`);
-  console.log(`Components → resueltos: ${report.compsResolved} | perdidos: ${report.compsLost}`);
-  console.log(`Services   → resueltos: ${report.svcsResolved} | perdidos: ${report.svcsLost}`);
-  console.log(`Endpoints  → resueltos: ${report.epsResolved} | perdidos: ${report.epsLost}`);
+  console.log(`\nScreens   → resueltas: ${report.screensResolved}  | perdidas: ${report.screensLost}`);
+  console.log(`Components → resueltos: ${report.compsResolved}  | perdidos: ${report.compsLost}`);
+  console.log(`Services   → resueltos: ${report.svcsResolved}  | perdidos: ${report.svcsLost}`);
+  console.log(`Endpoints  → resueltos: ${report.epsResolved}  | perdidos: ${report.epsLost}`);
 
   const totalLost = report.screensLost + report.compsLost + report.svcsLost + report.epsLost;
-  const totalResolved =
-    report.screensResolved + report.compsResolved + report.svcsResolved + report.epsResolved;
+  const totalResolved = report.screensResolved + report.compsResolved + report.svcsResolved + report.epsResolved;
   const total = totalLost + totalResolved;
 
   if (total > 0) {
@@ -255,12 +260,12 @@ async function main(): Promise<void> {
   if (report.unresolvableItems.length > 0) {
     console.log(`\n─── ITEMS SIN RESOLVER (${report.unresolvableItems.length}) ────────────────────`);
     report.unresolvableItems.forEach((item) => console.log("  ✗ " + item));
-    console.log("\n⚠ Estos valores quedarán como null tras el --apply.");
-    console.log("  Crea las entidades correspondientes en /entities y vuelve a correr el script.");
+    console.log("\n⚠  Estos valores quedarán como null tras el --apply.");
+    console.log("   Crea las entidades correspondientes en /entities y vuelve a correr el script.");
   } else if (total > 0) {
     console.log("\n✅ Todos los valores se resolvieron correctamente.");
   } else {
-    console.log("\nℹ Ningún FlowStep tiene datos que migrar (campos ya son null o vacíos).");
+    console.log("\nℹ  Ningún FlowStep tiene datos que migrar (campos ya son null o vacíos).");
   }
 
   if (DRY_RUN) {

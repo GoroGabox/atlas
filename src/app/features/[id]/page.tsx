@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import FeatureGraphView from "@/components/feature/FeatureGraphView";
+import { cleanOrphanedRefs } from "@/lib/cleanOrphanedRefs";
 import type { EntityCatalog } from "@/lib/types/entities";
 
 export default async function FeatureDetailPage({
@@ -39,7 +40,20 @@ export default async function FeatureDetailPage({
 
   if (!feature) notFound();
 
-  const flow = feature.flows[0] ?? null;
+  let flow = feature.flows[0] ?? null;
+
+  // Silently clean orphaned entity references (deleted entities still in steps)
+  if (flow) {
+    const cleaned = await cleanOrphanedRefs(flow.id);
+    if (cleaned) {
+      // Re-fetch steps with clean data
+      const freshFlow = await prisma.flow.findUnique({
+        where: { id: flow.id },
+        include: { steps: { orderBy: { order: "asc" } } },
+      });
+      if (freshFlow) flow = freshFlow;
+    }
+  }
 
   const featureData = {
     id:                  feature.id,
