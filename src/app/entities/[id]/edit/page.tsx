@@ -34,7 +34,7 @@ export default async function EditEntityPage({
 }) {
   const { id }         = await params;
   const { type = "" }  = await searchParams;
-  const modules        = await prisma.module.findMany({
+  const modules: { id: string; name: string }[] = await prisma.module.findMany({
     select: { id: true, name: true }, orderBy: { name: "asc" },
   });
 
