@@ -8,27 +8,37 @@ type Data = { label: string; sublabel?: string };
 
 /**
  * Handles fijos:
- *   LEFT  top    — from-comp-0   target ← Componentes  (único, todas las conexiones entran aquí)
- *   LEFT  bottom — data-out-0    source → Componentes  (único, todos los datos salen aquí)
- *   RIGHT top    — to-ep-req-0   source → Endpoint req (único)
- *   RIGHT bottom — from-ep-res-0 target ← Endpoint res (único)
+ *   LEFT  25%  — from-comp-0   target ← Componentes
+ *   LEFT  50%  — from-svc-0    target ← Otro servicio (inter-service)
+ *   LEFT  75%  — data-out-0    source → Componentes (datos response)
+ *   RIGHT 25%  — to-ep-req-0   source → Endpoint req
+ *   RIGHT 50%  — to-svc-0      source → Otro servicio (inter-service)
+ *   RIGHT 75%  — from-ep-res-0 target ← Endpoint res
  */
 const HANDLES: HandleSpec[] = [
   {
     id: "from-comp-0", type: "target", position: Position.Left,
-    top: "33%", color: "#f59e0b", label: "← Comp",
+    top: "25%", color: "#f59e0b", label: "← Comp",
+  },
+  {
+    id: "from-svc-0", type: "target", position: Position.Left,
+    top: "50%", color: "#10b981", label: "← Svc",
   },
   {
     id: "data-out-0", type: "source", position: Position.Left,
-    top: "67%", color: "#7c3aed", label: "Datos →",
+    top: "75%", color: "#7c3aed", label: "Datos →",
   },
   {
     id: "to-ep-req-0", type: "source", position: Position.Right,
-    top: "33%", color: "#f59e0b", label: "Req →",
+    top: "25%", color: "#f59e0b", label: "Req →",
+  },
+  {
+    id: "to-svc-0", type: "source", position: Position.Right,
+    top: "50%", color: "#10b981", label: "Svc →",
   },
   {
     id: "from-ep-res-0", type: "target", position: Position.Right,
-    top: "67%", color: "#7c3aed", label: "← Res",
+    top: "75%", color: "#7c3aed", label: "← Res",
   },
 ];
 
@@ -48,7 +58,7 @@ export default function FlowNodeService({ data, selected }: NodeProps) {
       labelColor="#fcd34d"
       handles={HANDLES}
       minWidth={250}
-      minHeight={90}
+      minHeight={100}
     />
   );
 }

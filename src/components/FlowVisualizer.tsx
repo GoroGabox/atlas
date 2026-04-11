@@ -94,6 +94,7 @@ function handleColor(h: string | null | undefined): string {
   if (h === "right")                return "#6366f1"; // actor → screen
   if (h.startsWith("right-"))       return "#3b82f6"; // screen → comp
   if (h.startsWith("to-service-"))  return "#06b6d4"; // comp → service
+  if (h.startsWith("to-svc-"))      return "#10b981"; // service → service
   if (h.startsWith("to-ep-req-"))   return "#f59e0b"; // service → endpoint req
   if (h === "res-out")              return "#7c3aed"; // endpoint → service res
   if (h.startsWith("data-out-"))    return "#7c3aed"; // service → comp data
@@ -124,6 +125,7 @@ function validateConn(
   if (srcType === "flowActor"    && srcHandle === "right"                && tgtType === "flowScreen")   return null;
   if (srcType === "flowScreen"   && srcHandle?.startsWith("right-")      && tgtType === "flowComp")     return null;
   if (srcType === "flowComp"     && srcHandle?.startsWith("to-service-") && tgtType === "flowService")  return null;
+  if (srcType === "flowService"  && srcHandle?.startsWith("to-svc-")      && tgtType === "flowService")  return null;
   if (srcType === "flowService"  && srcHandle?.startsWith("to-ep-req-")  && tgtType === "flowEndpoint") return null;
   if (srcType === "flowService"  && srcHandle?.startsWith("data-out-")      && tgtType === "flowComp")   return null;
   if (srcType === "flowEndpoint" && srcHandle === "res-out"              && tgtType === "flowService")  return null;
@@ -134,6 +136,7 @@ function validTargetTypes(srcHandle: string | null, srcType: string): string[] {
   if (srcType === "flowActor"    && srcHandle === "right")                  return ["flowScreen"];
   if (srcType === "flowScreen"   && srcHandle?.startsWith("right-"))        return ["flowComp"];
   if (srcType === "flowComp"     && srcHandle?.startsWith("to-service-"))   return ["flowService"];
+  if (srcType === "flowService"  && srcHandle?.startsWith("to-svc-"))        return ["flowService"];
   if (srcType === "flowService"  && srcHandle?.startsWith("to-ep-req-"))    return ["flowEndpoint"];
   if (srcType === "flowService"  && srcHandle?.startsWith("data-out-"))      return ["flowComp"];
   // res-out goes back to existing service only — can't create new
@@ -177,7 +180,7 @@ export function isStepBacked(id: string): boolean {
 function autoTargetHandle(srcHandle: string | null, tgtType: string): string | null {
   if (tgtType === "flowScreen")  return "left";
   if (tgtType === "flowComp")    return srcHandle?.startsWith("data-out-") ? "data-in" : "from-screen";
-  if (tgtType === "flowService") return "from-comp-0";
+  if (tgtType === "flowService") return srcHandle?.startsWith("to-svc-") ? "from-svc-0" : "from-comp-0";
   if (tgtType === "flowEndpoint")return "req-in";
   return null;
 }

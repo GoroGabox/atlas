@@ -225,13 +225,13 @@ export async function GET(request: Request) {
       if (content) {
         const slug = id.slice(0, 8); // fallback si el nombre falla
         const mod  = await prisma.module.findUnique({ where: { id }, select: { name: true } });
-        filename   = `${(mod?.name ?? slug).toLowerCase().replace(/[\s/\\:*?"<>|]+/g, "-")}.md`;
+        filename   = `${(mod?.name ?? slug).toLowerCase().replace(/[^\x00-\x7F]+/g, "").replace(/[\s/\\:*?"<>|]+/g, "-").replace(/^-+|-+$/g, "")}.md`;
       }
     } else if (type === "feature") {
       content  = await exportFeature(id);
       if (content) {
         const feat = await prisma.feature.findUnique({ where: { id }, select: { name: true } });
-        filename   = `${(feat?.name ?? id.slice(0, 8)).toLowerCase().replace(/[\s/\\:*?"<>|]+/g, "-")}.md`;
+        filename   = `${(feat?.name ?? id.slice(0, 8)).toLowerCase().replace(/[^\x00-\x7F]+/g, "").replace(/[\s/\\:*?"<>|]+/g, "-").replace(/^-+|-+$/g, "")}.md`;
       }
     }
 
