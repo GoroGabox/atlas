@@ -46,7 +46,7 @@ export default async function NewEntityPage({
   const raw  = params.type ?? "screen";
   const type = tabToType[raw] ?? raw;
 
-  const modules = await prisma.module.findMany({
+  const modules: { id: string; name: string }[] = await prisma.module.findMany({
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
