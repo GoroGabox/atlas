@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+type ModuleRow   = { id: string; name: string; domain: string; description: string };
+type FeatureRow  = { id: string; name: string; moduleId: string; businessGoal: string };
+type ScreenRow   = { id: string; name: string; route: string | null; moduleId: string };
+type ServiceRow  = { id: string; name: string; purpose: string };
+type EndpointRow = { id: string; path: string; method: string; purpose: string };
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.toLowerCase().trim() ?? "";
 
   if (!q || q.length < 2) return NextResponse.json([]);
 
-  const [modules, features, screens, services, endpoints] = await Promise.all([
-    prisma.module.findMany({ select: { id: true, name: true, domain: true, description: true } }),
-    prisma.feature.findMany({ select: { id: true, name: true, moduleId: true, businessGoal: true } }),
-    prisma.screen.findMany({ select: { id: true, name: true, route: true, moduleId: true } }),
-    prisma.service.findMany({ select: { id: true, name: true, purpose: true } }),
-    prisma.endpoint.findMany({ select: { id: true, path: true, method: true, purpose: true } }),
-  ]);
+  const [modules, features, screens, services, endpoints]: [ModuleRow[], FeatureRow[], ScreenRow[], ServiceRow[], EndpointRow[]] =
+    await Promise.all([
+      prisma.module.findMany({ select: { id: true, name: true, domain: true, description: true } }),
+      prisma.feature.findMany({ select: { id: true, name: true, moduleId: true, businessGoal: true } }),
+      prisma.screen.findMany({ select: { id: true, name: true, route: true, moduleId: true } }),
+      prisma.service.findMany({ select: { id: true, name: true, purpose: true } }),
+      prisma.endpoint.findMany({ select: { id: true, path: true, method: true, purpose: true } }),
+    ]);
 
   type Result = {
     id: string; type: string; label: string;
