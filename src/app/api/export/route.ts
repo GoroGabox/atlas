@@ -13,13 +13,17 @@ function list(items: string[]) {
   return items.length ? items.map((i) => `- ${i}`).join("\n") : "_Sin datos_";
 }
 
+type NameRow     = { id: string; name: string };
+type EndpointRow = { id: string; method: string; path: string };
+
 async function loadCatalogMaps() {
-  const [screens, components, services, endpoints] = await Promise.all([
-    prisma.screen.findMany({ select: { id: true, name: true } }),
-    prisma.component.findMany({ select: { id: true, name: true } }),
-    prisma.service.findMany({ select: { id: true, name: true } }),
-    prisma.endpoint.findMany({ select: { id: true, method: true, path: true } }),
-  ]);
+  const [screens, components, services, endpoints]: [NameRow[], NameRow[], NameRow[], EndpointRow[]] =
+    await Promise.all([
+      prisma.screen.findMany({ select: { id: true, name: true } }),
+      prisma.component.findMany({ select: { id: true, name: true } }),
+      prisma.service.findMany({ select: { id: true, name: true } }),
+      prisma.endpoint.findMany({ select: { id: true, method: true, path: true } }),
+    ]);
   return {
     screenMap:    new Map(screens.map((s) => [s.id, s.name])),
     componentMap: new Map(components.map((c) => [c.id, c.name])),
