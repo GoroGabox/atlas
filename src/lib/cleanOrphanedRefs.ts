@@ -30,7 +30,9 @@ export async function cleanOrphanedRefs(flowId: string): Promise<boolean> {
   }
 
   // Batch-verify existence in DB
-  const [existingScreens, existingComps, existingSvcs, existingEps] = await Promise.all([
+  type IdRow = { id: string };
+  const [existingScreens, existingComps, existingSvcs, existingEps]: [IdRow[], IdRow[], IdRow[], IdRow[]] =
+    await Promise.all([
     screenIds.size
       ? prisma.screen.findMany({    where: { id: { in: [...screenIds] } }, select: { id: true } })
       : [],

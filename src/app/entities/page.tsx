@@ -28,12 +28,18 @@ export default async function EntitiesPage({
 }) {
   const { tab = "screens" } = await searchParams;
 
-  const [screens, components, services, endpoints, rawSteps, rawFlows] = await Promise.all([
+  type StepRow = { endpoints: string | null; flowId: string };
+  type FlowRow = { id: string; feature: { moduleId: string; module: { id: string; name: string } } };
+
+  const [screens, components, services, endpoints] = await Promise.all([
     prisma.screen.findMany({ include: { module: true }, orderBy: { name: "asc" } }),
     prisma.component.findMany({ orderBy: { name: "asc" } }),
     prisma.service.findMany({ include: { module: true }, orderBy: { name: "asc" } }),
     prisma.endpoint.findMany({ orderBy: { path: "asc" } }),
-    // Dos queries simples en lugar de un select anidado 4 niveles
+  ]);
+
+  // Dos queries simples en lugar de un select anidado 4 niveles
+  const [rawSteps, rawFlows]: [StepRow[], FlowRow[]] = await Promise.all([
     prisma.flowStep.findMany({
       where:  { NOT: { endpoints: null } },
       select: { endpoints: true, flowId: true },

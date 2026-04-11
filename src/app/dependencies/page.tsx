@@ -1,21 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import DependencyGraphView from "@/components/dependencies/DependencyGraphView";
 
+type ModRow      = { id: string; name: string; domain: string; riskLevel: string };
+type FeatRow     = { id: string; name: string; moduleId: string; riskLevel: string; technicalComplexity: string };
+type NameRow     = { id: string; name: string };
+type EndpRow     = { id: string; path: string };
+type StepRow     = { services: string | null; flowId: string };
+type FlowRow     = { id: string; feature: { moduleId: string } };
+
 export default async function DependenciesPage() {
-  const [modules, features, screens, components, services, endpoints, relations] =
-    await Promise.all([
-      prisma.module.findMany({ select: { id: true, name: true, domain: true, riskLevel: true } }),
-      prisma.feature.findMany({ select: { id: true, name: true, moduleId: true, riskLevel: true, technicalComplexity: true } }),
-      prisma.screen.findMany({ select: { id: true, name: true } }),
-      prisma.component.findMany({ select: { id: true, name: true } }),
-      prisma.service.findMany({ select: { id: true, name: true } }),
-      prisma.endpoint.findMany({ select: { id: true, path: true } }),
-      prisma.relation.findMany(),
-    ]);
+  const [modules, features, screens, components, services, endpoints, relations]: [
+    ModRow[], FeatRow[], NameRow[], NameRow[], NameRow[], EndpRow[],
+    Awaited<ReturnType<typeof prisma.relation.findMany>>
+  ] = await Promise.all([
+    prisma.module.findMany({ select: { id: true, name: true, domain: true, riskLevel: true } }),
+    prisma.feature.findMany({ select: { id: true, name: true, moduleId: true, riskLevel: true, technicalComplexity: true } }),
+    prisma.screen.findMany({ select: { id: true, name: true } }),
+    prisma.component.findMany({ select: { id: true, name: true } }),
+    prisma.service.findMany({ select: { id: true, name: true } }),
+    prisma.endpoint.findMany({ select: { id: true, path: true } }),
+    prisma.relation.findMany(),
+  ]);
 
   // Servicios compartidos: usados por ≥2 módulos distintos en FlowSteps
   // Dos queries planas para evitar el límite de profundidad de joins en Prisma/SQLite
-  const [rawSteps, rawFlows] = await Promise.all([
+  const [rawSteps, rawFlows]: [StepRow[], FlowRow[]] = await Promise.all([
     prisma.flowStep.findMany({
       where:  { NOT: { services: null } },
       select: { services: true, flowId: true },
